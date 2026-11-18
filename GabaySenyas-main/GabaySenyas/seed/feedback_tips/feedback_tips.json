@@ -1,0 +1,9 @@
+[
+  { "dimension": "hand_position", "direction": "too_low", "message": "Raise your hand higher.", "review_status": "draft" },
+  { "dimension": "hand_position", "direction": "too_high", "message": "Lower your hand a little.", "review_status": "draft" },
+  { "dimension": "hand_position", "direction": "too_far_left", "message": "Move your hand a little to the right.", "review_status": "draft" },
+  { "dimension": "hand_position", "direction": "too_far_right", "message": "Move your hand a little to the left.", "review_status": "draft" },
+  { "dimension": "motion_direction", "direction": "wrong_direction", "message": "Check the direction of the movement in the demo.", "review_status": "draft" },
+  { "dimension": "speed", "direction": "too_fast", "message": "Slow down the movement.", "review_status": "draft" },
+  { "dimension": "speed", "direction": "too_slow", "message": "Try the movement a bit faster, like in the demo.", "review_status": "draft" }
+]
