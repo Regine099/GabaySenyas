@@ -1,0 +1,13 @@
+# ML / training environment (separate from backend/requirements.txt).
+# CPU-only torch is enough for this model size; install it first to avoid the large CUDA build:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+numpy
+mediapipe>=0.10.14
+opencv-python
+torch
+onnx
+onnxscript
+onnxruntime
+scikit-learn
+matplotlib
+pytest

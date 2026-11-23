@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.db
+
+# Secrets
+.env
+
+# Node
+node_modules/
+dist/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# ML: never commit datasets, landmarks, recordings, or model binaries
+ml/data/
+ml/models/*
+!ml/models/README.md
+ml/.venv/
