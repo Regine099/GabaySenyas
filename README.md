@@ -59,6 +59,16 @@ Health check: `http://127.0.0.1:8000/health`
 
 Frontend: see `frontend/README.md` (one-time Vite setup).
 
+ML (recording, training, live demo):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ml\setup.ps1   # once
+ml\.venv\Scripts\activate
+python ml/training/webcam.py record --label A --signer S01
+```
+
+See `ml/README.md` for the full recording and training workflow.
+
 ## Read the Documentation
 
 Start with `docs/README.md` for the reading order.
