@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Lesson } from '../data/lessons';
 import { usePractice } from '../lib/usePractice';
+
+// Auto-accept: the model must see the lesson's letter this many times
+// (one prediction every ~200 ms, so 12 ≈ holding the sign for about 2.5 seconds).
+const REQUIRED_STREAK = 12;
+const MIN_CONFIDENCE = 0.5; // lower = more sensitive (backend default is 0.7)
+const MISS_PENALTY = 2; // a wrong prediction takes this much off the hold instead of resetting it
 
 interface Props {
   lesson: Lesson;
@@ -15,10 +21,33 @@ export default function PracticeView({ lesson, onCompleted }: Props) {
   const cameraOn = camera === 'on';
   const isCompleted = lesson.letter === completedLetter;
 
-  function markCompleted() {
-    onCompleted(lesson.letter);
-    setCompletedLetter(lesson.letter);
-  }
+  const [streak, setStreak] = useState(0);
+
+  // Reset when switching letters.
+  useEffect(() => setStreak(0), [lesson.letter]);
+
+  // Build up the hold with correct predictions. A wrong prediction only knocks it back a little
+  // (so one shaky frame doesn't ruin a long hold); losing the hand resets it.
+  useEffect(() => {
+    if (isCompleted) return;
+    const top = live.predictions[0];
+    if (!top) {
+      setStreak(0);
+      return;
+    }
+    const correct = top.label === lesson.letter && top.confidence >= MIN_CONFIDENCE;
+    setStreak((s) => (correct ? s + 1 : Math.max(0, s - MISS_PENALTY)));
+  }, [live.predictions, lesson.letter, isCompleted]);
+
+  // Accept automatically once the sign has been held long enough.
+  useEffect(() => {
+    if (streak >= REQUIRED_STREAK && !isCompleted) {
+      onCompleted(lesson.letter);
+      setCompletedLetter(lesson.letter);
+    }
+  }, [streak, isCompleted, lesson.letter, onCompleted]);
+
+  const holdProgress = Math.min(streak / REQUIRED_STREAK, 1);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
@@ -130,14 +159,42 @@ export default function PracticeView({ lesson, onCompleted }: Props) {
             recognitionError={recognitionError}
             live={live}
           />
-          <button
-            type="button"
-            onClick={markCompleted}
-            disabled={isCompleted}
-            className="mt-4 rounded-lg bg-teal-brand px-4 py-2 text-sm font-extrabold text-white hover:brightness-95 disabled:opacity-60"
-          >
-            {isCompleted ? 'Letter marked complete' : 'Mark letter complete'}
-          </button>
+          {isCompleted ? (
+            <div className="mt-4 rounded-lg bg-teal-soft px-4 py-3">
+              <p className="text-sm font-extrabold text-teal-brand">
+                ✓ Correct! “{lesson.letter}” is complete. The next letter is unlocked.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setCompletedLetter(null);
+                  setStreak(0);
+                }}
+                className="mt-3 rounded-lg border border-teal-brand bg-white px-4 py-1.5 text-sm font-bold text-teal-brand hover:bg-teal-brand hover:text-white"
+              >
+                ↻ Try again
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <div className="flex justify-between text-xs font-bold text-muted">
+                <span>{streak > 0 ? `Hold “${lesson.letter}”…` : `Sign “${lesson.letter}” to pass`}</span>
+                <span>{Math.round(holdProgress * 100)}%</span>
+              </div>
+              <div
+                className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100"
+                role="progressbar"
+                aria-valuenow={Math.round(holdProgress * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="h-full rounded-full bg-teal-brand transition-all duration-200"
+                  style={{ width: `${holdProgress * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
           <p className="mt-2 text-xs text-muted">Completion is saved in this browser until backend progress is available.</p>
         </section>
       </div>
@@ -186,7 +243,7 @@ function Preview({
         <p className="rounded bg-rose-50 p-2 text-sm text-rose-700">{recognitionError}</p>
       ) : !live.hand ? (
         <p className="text-sm leading-snug text-muted">Show your hand to the camera and keep it inside the guide.</p>
-      ) : recognition === 'loading' ? (
+      ) : !top && recognition === 'loading' ? (
         <p className="text-sm leading-snug text-muted">Sending hand landmarks to the backend…</p>
       ) : top ? (
         <>
