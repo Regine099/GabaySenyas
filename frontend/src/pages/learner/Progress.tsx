@@ -28,7 +28,7 @@ export default function Progress() {
 
   return (
     <div className="flex min-h-screen flex-col bg-surface">
-      <Header completed={completed.length} total={total} active="progress" />
+      <Header completed={completed.length} total={total} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <h1 className="mb-5 text-3xl font-extrabold tracking-tight">My Progress</h1>
