@@ -1,68 +1,38 @@
-# GabaySenyas Frontend
+# GabaySenyas frontend
 
-UI plus **in-browser webcam capture and landmark extraction**.
+React + TypeScript + Tailwind CSS, built with Vite. The browser captures webcam video locally and sends only hand landmarks to the backend for recognition; raw video is never uploaded.
 
-## Responsibilities
+## Run locally
 
-- Learner screens and admin screens
-- Layouts and navigation
-- Reusable UI components
-- Webcam capture and hand/arm landmark extraction in the browser
-- Landmark overlay on the live video
-- API calls through `src/api/`
-- Display of ratings, scores, tips, recommendations, progress, and analytics
+1. Install Node.js 20 or newer.
+2. From this folder, install dependencies and start Vite:
+   ```sh
+   npm install
+   npm run dev
+   ```
+3. In `backend/.env`, set `DEV_RECOGNITION=true` for local testing only, then start the backend from `backend/`:
+   ```sh
+   uvicorn main:app --reload
+   ```
+   Vite proxies `/api` requests to `http://127.0.0.1:8000`.
+4. Ensure `MODEL_PATH` points to a directory containing `model.onnx` and `meta.json`. The dev recognition endpoint is unavailable until a compatible backend model is present.
 
-## Must Not Contain
+Camera access requires `localhost` or HTTPS. The dev recognition endpoint must remain disabled in deployed environments.
 
-- Database queries or SQLAlchemy models
-- Rating thresholds or scoring/recognition logic
-- Adaptive/unlock rules
-- Secrets
-- Any upload of raw video (only landmark coordinates are sent)
+## Current functionality
 
-Those responsibilities belong to `backend/`.
+- Alphabet lesson and practice UI with reference images.
+- Webcam permission states and live hand-landmark overlay.
+- Backend recognition preview using `POST /api/v1/dev/recognize`.
+- Completion progress saved in browser `localStorage` until backend progress endpoints are implemented.
 
-## Learner UI
+Recognition is a development preview only. The production `/signs/{id}/attempts` endpoint, server-side rating, feedback, and saved progress are not implemented yet; do not treat preview predictions as an assessment.
 
-- Login and Register
-- Dashboard (recommended next step, recent progress)
-- Lesson Library (by difficulty, lock state)
-- Lesson / Sign page (demonstration video or image)
-- Practice (webcam, landmark overlay, record / retry)
-- Attempt Result (rating, score, tips, recommendation)
-- Progress (score over time, attempt history, signs needing practice)
+## Still needed
 
-## Admin UI
+- Trained and validated backend model files at `MODEL_PATH` (`model.onnx` and `meta.json`).
+- Verified lesson content and FSL review for letters A–Z.
+- Production attempt/progress APIs, authentication, and a deployed backend.
+- Configure a same-origin API proxy or backend CORS/base URL before deploying the frontend. The Vite development proxy is not included in production builds.
 
-- Analytics Overview
-- Learner Performance
-- Content Management (lessons, signs, reference sequences, tip catalog)
-- Sign Validation (record FSL teacher/professional reviews)
-- Settings (thresholds)
-- Account Management
-
-## Structure
-
-```text
-frontend/src/
-├── api/          client, auth, lessons, attempts, progress, admin calls
-├── components/   WebcamCapture, LandmarkOverlay, ScoreBadge, FeedbackTip,
-│                 LessonCard, DifficultyTag, ProgressBar, tokens/
-├── hooks/        useWebcam, useLandmarker, useRecorder
-├── layout/       LearnerLayout, AdminLayout
-├── pages/        learner/, admin/, Login, Register
-├── App.tsx
-└── main.tsx
-```
-
-## One-time setup
-
-The config files (`package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`) are empty placeholders. Generate them once:
-
-1. Delete the empty `package.json`, `tsconfig.json`, `vite.config.ts`, `index.html`, `src/main.tsx`, and `src/App.tsx`.
-2. From inside `frontend/`, run `npm create vite@latest . -- --template react-ts`.
-3. Run `npm install`, then add React Router and Tailwind CSS.
-4. Add a hand-tracking library, e.g. `npm install @mediapipe/tasks-vision` (hand + pose landmarkers) — confirm the choice with the team.
-5. Keep the `src/` folders above. Run with `npm run dev`.
-
-Notes: camera access (`getUserMedia`) needs `https` or `localhost`. Test on a normal laptop webcam early.
+See `src/App.tsx` for page state, `src/components/` for the UI, `src/lib/usePractice.ts` for webcam capture, and `src/api/` for backend requests.
