@@ -110,7 +110,7 @@ export default function Landing() {
             <a className="hover:text-[#079a9f]" href="#how">How it works</a>
             <a className="hover:text-[#079a9f]" href="#about">About</a>
           </nav>
-          <a className="rounded-lg bg-[#079a9f] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#07858a]" href="#/learn">
+          <a className="rounded-lg bg-[#079a9f] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#07858a]" href="/learn">
             Get started
           </a>
         </div>

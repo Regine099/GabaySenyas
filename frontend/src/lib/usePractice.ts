@@ -21,6 +21,25 @@ const WINDOW_MS = 1500;
 const MIN_FRAME_GAP_MS = 30;
 const PREDICT_EVERY_MS = 200;
 const MIN_HAND_FRAMES = 5;
+const HAND_LOST_GRACE_MS = 400; // ignore brief tracking dropouts so the preview doesn't flicker
+
+// Remember that the learner already turned the camera on, so later lessons start it automatically.
+const CAMERA_FLAG_KEY = 'gabaysenyas.cameraEnabled';
+function rememberCamera(on: boolean) {
+  try {
+    if (on) localStorage.setItem(CAMERA_FLAG_KEY, '1');
+    else localStorage.removeItem(CAMERA_FLAG_KEY);
+  } catch {
+    /* storage unavailable: fall back to asking each time */
+  }
+}
+function cameraRemembered() {
+  try {
+    return localStorage.getItem(CAMERA_FLAG_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 let landmarkerPromise: Promise<HandLandmarker> | null = null;
 function getLandmarker() {
@@ -66,6 +85,7 @@ export function usePractice(letter: string) {
   const inFlightRef = useRef(false);
   const lastSentRef = useRef(0);
   const lastUiRef = useRef(0);
+  const lastHandSeenRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
 
   const [camera, setCamera] = useState<CameraState>('off');
@@ -107,12 +127,19 @@ export function usePractice(letter: string) {
         audio: false,
       });
       setCamera('on');
+      rememberCamera(true);
     } catch (error) {
       const denied =
         error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'SecurityError');
+      if (denied) rememberCamera(false);
       setCamera(denied ? 'denied' : 'error');
     }
   }, []);
+
+  // Auto-start the camera if the learner enabled it before.
+  useEffect(() => {
+    if (cameraRemembered()) void enable();
+  }, [enable]);
 
   useEffect(() => {
     if (camera !== 'on') return;
@@ -208,9 +235,11 @@ export function usePractice(letter: string) {
             while (frames.length && timestampMs - frames[0].t_ms > WINDOW_MS) frames.shift();
           }
 
+          if (result.landmarks.length > 0) lastHandSeenRef.current = timestampMs;
+
           if (timestampMs - lastUiRef.current > 100) {
             lastUiRef.current = timestampMs;
-            const hasHand = result.landmarks.length > 0;
+            const hasHand = timestampMs - lastHandSeenRef.current < HAND_LOST_GRACE_MS;
             setLive((current) => ({
               ...current,
               hand: hasHand,
